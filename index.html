@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2126;
+    --border: #2a2d35;
+    --text: #e8e9eb;
+    --muted: #6b7280;
+    --accent: #f0c040;
+    --green: #4ade80;
+    --red: #f87171;
+    --blue: #60a5fa;
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: var(–bg);
+color: var(–text);
+font-family: ‘DM Mono’, monospace;
+font-size: 14px;
+min-height: 100vh;
+padding: 0 0 60px;
+}
+
+/* Grain overlay */
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background-image: url(“data:image/svg+xml,%3Csvg viewBox=‘0 0 256 256’ xmlns=‘http://www.w3.org/2000/svg’%3E%3Cfilter id=‘noise’%3E%3CfeTurbulence type=‘fractalNoise’ baseFrequency=‘0.9’ numOctaves=‘4’ stitchTiles=‘stitch’/%3E%3C/filter%3E%3Crect width=‘100%25’ height=‘100%25’ filter=‘url(%23noise)’ opacity=‘0.04’/%3E%3C/svg%3E”);
+pointer-events: none;
+z-index: 0;
+opacity: 0.4;
+}
+
+header {
+position: relative;
+z-index: 1;
+padding: 36px 32px 28px;
+border-bottom: 1px solid var(–border);
+display: flex;
+align-items: flex-end;
+gap: 16px;
+}
+
+header h1 {
+font-family: ‘DM Serif Display’, serif;
+font-size: 2.2rem;
+color: var(–accent);
+letter-spacing: -0.5px;
+line-height: 1;
+}
+
+header span {
+color: var(–muted);
+font-size: 12px;
+padding-bottom: 4px;
+}
+
+.container {
+position: relative;
+z-index: 1;
+max-width: 860px;
+margin: 0 auto;
+padding: 28px 24px;
+}
+
+/* Summary cards */
+.summary {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 14px;
+margin-bottom: 32px;
+}
+
+.card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 18px 20px;
+position: relative;
+overflow: hidden;
+transition: border-color 0.2s;
+}
+
+.card::after {
+content: ‘’;
+position: absolute;
+top: 0; left: 0; right: 0;
+height: 2px;
+}
+
+.card.total::after { background: var(–accent); }
+.card.expenses::after { background: var(–red); }
+.card.credit::after { background: var(–green); }
+
+.card-label {
+font-size: 10px;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(–muted);
+margin-bottom: 10px;
+}
+
+.card-value {
+font-family: ‘DM Serif Display’, serif;
+font-size: 1.8rem;
+line-height: 1;
+}
+
+.card.total .card-value { color: var(–accent); }
+.card.expenses .card-value { color: var(–red); }
+.card.credit .card-value { color: var(–green); }
+
+.card-sub {
+font-size: 11px;
+color: var(–muted);
+margin-top: 6px;
+}
+
+/* Balance bar */
+.balance-bar {
+height: 4px;
+background: var(–border);
+border-radius: 2px;
+margin: 0 0 30px;
+overflow: hidden;
+}
+
+.balance-fill {
+height: 100%;
+border-radius: 2px;
+transition: width 0.4s ease;
+}
+
+/* Form */
+.form-panel {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 12px;
+padding: 24px;
+margin-bottom: 28px;
+}
+
+.form-title {
+font-size: 11px;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(–muted);
+margin-bottom: 18px;
+}
+
+.form-grid {
+display: flex;
+flex-direction: column;
+gap: 14px;
+}
+
+.form-row {
+display: flex;
+gap: 14px;
+}
+
+.form-grid .field {
+width: 100%;
+max-width: 400px;
+}
+
+.form-grid .field input,
+.form-grid .field select {
+width: 100%;
+min-width: 0;
+max-width: 100%;
+box-sizing: border-box;
+display: block;
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+label {
+font-size: 10px;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+color: var(–muted);
+}
+
+input, select {
+background: var(–surface2);
+border: 1px solid var(–border);
+color: var(–text);
+font-family: ‘DM Mono’, monospace;
+font-size: 13px;
+padding: 9px 12px;
+border-radius: 7px;
+outline: none;
+transition: border-color 0.15s;
+width: 100%;
+}
+
+input:focus, select:focus {
+border-color: var(–accent);
+box-shadow: 0 0 0 2px rgba(240, 192, 64, 0.1);
+}
+
+input[type=“date”]::-webkit-calendar-picker-indicator {
+filter: invert(0.5);
+cursor: pointer;
+}
+
+select option { background: var(–surface2); }
+
+.btn-add {
+background: var(–accent);
+color: #0e0f11;
+font-family: ‘DM Mono’, monospace;
+font-size: 13px;
+font-weight: 500;
+border: none;
+border-radius: 7px;
+padding: 10px 18px;
+cursor: pointer;
+white-space: nowrap;
+transition: opacity 0.15s, transform 0.1s;
+height: 38px;
+}
+
+.btn-add:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-add:active { transform: translateY(0); }
+
+/* Filter bar */
+.filter-bar {
+display: flex;
+gap: 10px;
+align-items: center;
+margin-bottom: 16px;
+flex-wrap: wrap;
+}
+
+.filter-bar select, .filter-bar input {
+width: auto;
+flex: 1;
+min-width: 120px;
+max-width: 180px;
+}
+
+.filter-label {
+font-size: 11px;
+color: var(–muted);
+letter-spacing: 0.08em;
+text-transform: uppercase;
+}
+
+/* Table */
+.table-wrap {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 12px;
+overflow: hidden;
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+}
+
+thead th {
+font-size: 10px;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+color: var(–muted);
+padding: 14px 16px;
+text-align: left;
+border-bottom: 1px solid var(–border);
+background: var(–surface2);
+}
+
+tbody tr {
+border-bottom: 1px solid rgba(42,45,53,0.6);
+transition: background 0.15s;
+animation: rowIn 0.25s ease both;
+}
+
+@keyframes rowIn {
+from { opacity: 0; transform: translateY(-6px); }
+to   { opacity: 1; transform: translateY(0); }
+}
+
+tbody tr:hover { background: var(–surface2); }
+tbody tr:last-child { border-bottom: none; }
+
+td {
+padding: 13px 16px;
+font-size: 13px;
+}
+
+td.date { color: var(–muted); font-size: 12px; }
+td.desc { color: var(–text); }
+td.type-badge span {
+font-size: 10px;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+padding: 3px 8px;
+border-radius: 4px;
+font-weight: 500;
+}
+
+.badge-expense { background: rgba(248,113,113,0.12); color: var(–red); }
+.badge-credit  { background: rgba(74,222,128,0.12);  color: var(–green); }
+.badge-total   { background: rgba(240,192,64,0.12);  color: var(–accent); }
+
+td.amount { font-size: 13px; font-weight: 500; text-align: right; }
+td.amount.expense { color: var(–red); }
+td.amount.credit  { color: var(–green); }
+td.amount.total   { color: var(–accent); }
+
+.btn-del {
+background: none;
+border: none;
+color: var(–red);
+cursor: pointer;
+font-size: 11px;
+font-family: ‘DM Mono’, monospace;
+padding: 2px 0;
+margin-top: 4px;
+display: block;
+opacity: 0.6;
+transition: opacity 0.15s;
+}
+
+.btn-del:hover { opacity: 1; }
+
+.type-badge-inline { display: block; margin-top: 4px; }
+.type-badge-inline span {
+font-size: 10px;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+padding: 2px 6px;
+border-radius: 4px;
+font-weight: 500;
+}
+
+.empty-state {
+text-align: center;
+padding: 48px 16px;
+color: var(–muted);
+font-size: 13px;
+line-height: 2;
+}
+
+.empty-state .icon { font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.4; }
+
+/* Month group header */
+.month-header td {
+background: var(–bg);
+color: var(–muted);
+font-size: 10px;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+padding: 8px 16px;
+}
+
+/* Toast */
+.toast {
+position: fixed;
+bottom: 24px; right: 24px;
+background: var(–surface);
+border: 1px solid var(–accent);
+color: var(–accent);
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+padding: 10px 18px;
+border-radius: 8px;
+z-index: 999;
+opacity: 0;
+transform: translateY(10px);
+transition: all 0.25s;
+pointer-events: none;
+}
+
+.toast.show { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 640px) {
+.form-row { flex-direction: column; }
+.summary { grid-template-columns: 1fr; }
+.filter-bar select, .filter-bar input { max-width: 100%; }
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <h1>Tracker</h1>
+</header>
+
+<div class="container">
+
+  <!-- Summary Cards -->
+
+  <div class="summary">
+    <div class="card total">
+      <div class="card-label">Balance (Credit − Expense)</div>
+      <div class="card-value" id="s-total">₹0</div>
+      <div class="card-sub" id="s-total-count">0 entries</div>
+    </div>
+    <div class="card expenses">
+      <div class="card-label">Total Expenses</div>
+      <div class="card-value" id="s-expense">₹0</div>
+      <div class="card-sub" id="s-expense-count">0 entries</div>
+    </div>
+    <div class="card credit">
+      <div class="card-label">Total Credit</div>
+      <div class="card-value" id="s-credit">₹0</div>
+      <div class="card-sub" id="s-credit-count">0 entries</div>
+    </div>
+  </div>
+
+  <div class="balance-bar">
+    <div class="balance-fill" id="balance-fill"></div>
+  </div>
+
+  <!-- Entry Form -->
+
+  <div class="form-panel">
+    <div class="form-title">+ New Entry</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Date</label>
+        <div style="display:flex; gap:8px;">
+          <select id="f-day" style="flex:1; min-width:0;"></select>
+          <select id="f-month" style="flex:2; min-width:0;"></select>
+          <select id="f-year" style="flex:2; min-width:0;"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <select id="f-type">
+          <option value="expense">Expense</option>
+          <option value="credit">Credit</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Amount (₹)</label>
+        <input type="number" id="f-amount" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input type="text" id="f-desc" placeholder="e.g. Groceries, Salary…">
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="btn-add" onclick="addEntry()">+ Add Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+
+  <div class="filter-bar">
+    <span class="filter-label">Filter:</span>
+    <select id="filter-type" onchange="renderTable()">
+      <option value="all">All types</option>
+      <option value="expense">Expenses</option>
+      <option value="credit">Credits</option>
+      <option value="total">Total</option>
+    </select>
+    <input type="month" id="filter-month" onchange="renderTable()" placeholder="Month">
+    <button class="btn-add" style="background:transparent;color:var(--muted);border:1px solid var(--border);font-size:11px;height:36px;" onclick="clearFilters()">Clear filters</button>
+  </div>
+
+  <!-- Table -->
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date / Type</th>
+          <th>Description</th>
+          <th style="text-align:right">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="entries-body"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const STORAGE_KEY = 'budget_tracker_v1';
+
+  // Populate date dropdowns
+  const today = new Date();
+  const daySel   = document.getElementById('f-day');
+  const monSel   = document.getElementById('f-month');
+  const yearSel  = document.getElementById('f-year');
+  const months   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  for (let d = 1; d <= 31; d++) {
+    const o = document.createElement('option');
+    o.value = String(d).padStart(2,'0');
+    o.textContent = String(d).padStart(2,'0');
+    daySel.appendChild(o);
+  }
+  months.forEach((m, i) => {
+    const o = document.createElement('option');
+    o.value = String(i+1).padStart(2,'0');
+    o.textContent = m;
+    monSel.appendChild(o);
+  });
+  for (let y = today.getFullYear(); y >= 2020; y--) {
+    const o = document.createElement('option');
+    o.value = y;
+    o.textContent = y;
+    yearSel.appendChild(o);
+  }
+  daySel.value  = String(today.getDate()).padStart(2,'0');
+  monSel.value  = String(today.getMonth()+1).padStart(2,'0');
+  yearSel.value = today.getFullYear();
+
+  function getSelectedDate() {
+    return `${yearSel.value}-${monSel.value}-${daySel.value}`;
+  }
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function save(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function fmt(n) {
+    return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function addEntry() {
+    const date   = getSelectedDate();
+    const type   = document.getElementById('f-type').value;
+    const amount = parseFloat(document.getElementById('f-amount').value);
+    const desc   = document.getElementById('f-desc').value.trim();
+
+    if (!date || isNaN(amount) || amount <= 0) {
+      showToast('⚠ Please fill a valid amount.');
+      return;
+    }
+
+    const data = load();
+    data.push({ id: Date.now(), date, type, amount, desc: desc || '—' });
+    data.sort((a, b) => b.date.localeCompare(a.date));
+    save(data);
+
+    document.getElementById('f-amount').value = '';
+    document.getElementById('f-desc').value = '';
+
+    renderTable();
+    updateSummary();
+    showToast('✓ Entry saved.');
+  }
+
+  function deleteEntry(id) {
+    const data = load().filter(e => e.id !== id);
+    save(data);
+    renderTable();
+    updateSummary();
+    showToast('Entry deleted.');
+  }
+
+  function renderTable() {
+    const filterType  = document.getElementById('filter-type').value;
+    const filterMonth = document.getElementById('filter-month').value;
+    let data = load();
+
+    if (filterType !== 'all') data = data.filter(e => e.type === filterType);
+    if (filterMonth) data = data.filter(e => e.date.startsWith(filterMonth));
+
+    const tbody = document.getElementById('entries-body');
+
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state"><span class="icon">📋</span>No entries yet.<br>Add one above to get started.</div></td></tr>`;
+      return;
+    }
+
+    let html = '';
+    let lastMonth = '';
+
+    data.forEach(e => {
+      const month = e.date.substring(0, 7);
+      if (month !== lastMonth) {
+        const [y, m] = month.split('-');
+        const label = new Date(y, m-1).toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+        html += `<tr class="month-header"><td colspan="3">${label}</td></tr>`;
+        lastMonth = month;
+      }
+
+      const badgeClass = e.type === 'expense' ? 'badge-expense' : e.type === 'credit' ? 'badge-credit' : 'badge-total';
+      const amtClass   = e.type === 'expense' ? 'expense' : e.type === 'credit' ? 'credit' : 'total';
+      const sign       = e.type === 'expense' ? '−' : e.type === 'credit' ? '+' : '';
+
+      html += `<tr>
+        <td class="date">${formatDate(e.date)}<br><span class="type-badge-inline"><span class="${badgeClass}">${e.type}</span></span></td>
+        <td class="desc">${escHtml(e.desc)}</td>
+        <td style="text-align:right; white-space:nowrap;">
+          <div class="amount ${amtClass}">${sign}${fmt(e.amount)}</div>
+          <button class="btn-del" onclick="deleteEntry(${e.id})" title="Delete">🗑 Delete</button>
+        </td>
+      </tr>`;
+    });
+
+    tbody.innerHTML = html;
+  }
+
+  function updateSummary() {
+    const data = load();
+
+    const expenses = data.filter(e => e.type === 'expense');
+    const credits  = data.filter(e => e.type === 'credit');
+
+    const sumExpense = expenses.reduce((s, e) => s + e.amount, 0);
+    const sumCredit  = credits.reduce((s, e) => s + e.amount, 0);
+    const sumTotal   = sumCredit - sumExpense;
+
+    document.getElementById('s-total').textContent   = fmt(sumTotal);
+    document.getElementById('s-expense').textContent = fmt(sumExpense);
+    document.getElementById('s-credit').textContent  = fmt(sumCredit);
+
+    document.getElementById('s-total-count').textContent   = `auto-calculated`;
+    document.getElementById('s-expense-count').textContent = `${expenses.length} entr${expenses.length === 1 ? 'y' : 'ies'}`;
+    document.getElementById('s-credit-count').textContent  = `${credits.length} entr${credits.length === 1 ? 'y' : 'ies'}`;
+
+    // Balance bar
+    const fill = document.getElementById('balance-fill');
+    if (sumExpense + sumCredit > 0) {
+      const pct = Math.min(100, (sumCredit / (sumCredit + sumExpense)) * 100);
+      fill.style.width = pct + '%';
+      fill.style.background = pct > 60 ? 'var(--green)' : pct > 35 ? 'var(--accent)' : 'var(--red)';
+    } else {
+      fill.style.width = '0%';
+    }
+  }
+
+  function clearFilters() {
+    document.getElementById('filter-type').value  = 'all';
+    document.getElementById('filter-month').value = '';
+    renderTable();
+  }
+
+  function formatDate(d) {
+    const [y, m, day] = d.split('-');
+    return `${day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]} ${y}`;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // Enter key on amount / desc
+  ['f-amount','f-desc'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') addEntry();
+    });
+  });
+
+  // Init
+  renderTable();
+  updateSummary();
+</script>
+
+</body>
+</html>
