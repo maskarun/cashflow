@@ -1,50 +1,53 @@
-# Cashflow
+# My Money — Cashflow Tracker
 
-A zero-dependency personal finance tracker that runs entirely in the browser. No build step, no server, no package manager — just open `index.html` and go.
+A personal finance tracker built with React, TypeScript, and Tailwind CSS. Runs entirely in the browser — no account, no backend, no data leaves your device.
+
+**Live app:** https://arun-budget-tracker.lovable.app
 
 ## Features
 
-- Add expense and credit transactions with a date, amount, and description
-- Summary cards showing balance (credit − expense), total expenses, and total credits
-- Visual balance bar that shifts green → amber → red as expenses grow
-- Filter transactions by type and by month
-- Transactions grouped by calendar month, sorted newest first
-- Data persists in browser `localStorage` — no account or backend needed
+**Dashboard**
+- Add income and expense transactions with category, currency (USD / INR), amount, and an optional note
+- Summary cards: balance, total income, total expenses — shown per currency
+- Category breakdown with percentage bars
+- Recent transactions list with delete
+
+**Portfolio**
+- Savings — track bank accounts, deposits, and cash reserves by institution and currency
+- Loans — enter principal, start date, tenure, and interest rate; EMI and outstanding balance are calculated automatically with a full amortisation schedule
+- Gold loans — bullet-repayment loans with day-by-day interest accrual
+
+**Storage**
+- Data auto-saves to `localStorage` in your browser
+- Link a local JSON file (Chromium only) for durable, portable storage that persists across browsers
 
 ## Getting Started
 
-Open `index.html` in any modern browser:
-
 ```bash
-# macOS
-open index.html
-
-# Linux
-xdg-open index.html
-
-# Windows
-start index.html
+npm install
+cp .env.example .env    # fill in Supabase values if needed
+npm run dev             # http://localhost:8080
 ```
 
-Or serve it locally if you need to avoid cross-origin restrictions:
+## Scripts
 
-```bash
-python3 -m http.server 8080
-# then visit http://localhost:8080
-```
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start dev server with HMR |
+| `npm run build` | Production build → `dist/` |
+| `npm run preview` | Preview production build |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest (single run) |
 
 ## Tech Stack
 
-- **HTML5 + CSS3 + Vanilla JavaScript (ES6+)** — no frameworks, no dependencies
-- **Browser `localStorage`** — all data stays on your device
-- **Google Fonts** — DM Serif Display & DM Mono
+- **React 18 + TypeScript** — component UI
+- **Vite** — build tooling
+- **Tailwind CSS + shadcn-ui** — styling and component primitives
+- **Zod** — form validation
+- **Vitest + Testing Library** — unit tests
+- **Lovable** — deployment platform
 
 ## Data & Privacy
 
-All data is stored locally in your browser under the key `budget_tracker_v1`. Nothing is sent to any server. Clearing your browser's site data will erase all entries.
-
-## Limitations
-
-- Data is device- and browser-specific; there is no sync or export
-- Currency is fixed to Indian Rupees (₹)
-- Year range in the date picker starts from 2020
+All data is stored locally in your browser (`localStorage`) under `budget.tx.v1` and `budget.portfolio.v1`. When a JSON file is linked, data is also written to `my-money.json` on your device. Nothing is sent to any server unless Supabase integration is explicitly wired up.
